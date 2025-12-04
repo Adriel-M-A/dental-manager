@@ -1,34 +1,86 @@
-# temp
+# Dental Manager 🦷
 
-An Electron application with React and TypeScript
+Sistema de gestión de escritorio para consultorios odontológicos. Diseñado para ser una solución eficiente, rápida y local para la administración de pacientes, turnos y finanzas.
 
-## Recommended IDE Setup
+> **Estado:** En desarrollo (v1.0.0)
+> **Arquitectura:** Electron + React + TypeScript + SQLite
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+## 🎯 Objetivo del Proyecto (v1.0.0)
 
-## Project Setup
+Crear una aplicación de escritorio para un único usuario (el odontólogo/a) que permita gestionar el flujo diario del consultorio sin depender de conexión a internet.
 
-### Install
+### Funcionalidades Principales
 
-```bash
-$ npm install
-```
+1.  **Gestión de Pacientes (CRUD):**
+    - Alta de pacientes con datos personales y médicos (alergias).
+    - Historial clínico y de tratamientos.
+2.  **Agenda de Turnos:**
+    - Visualización de citas.
+    - Estados de turno: Pendiente, Completado, Cancelado, Ausente.
+3.  **Control de Caja:**
+    - Registro de pagos (Efectivo/Transferencia).
+    - Reporte de ingresos.
+4.  **Catálogo de Tratamientos:**
+    - Lista de precios base para agilizar la carga.
 
-### Development
+---
 
-```bash
-$ npm run dev
-```
+## 🛠️ Stack Tecnológico
 
-### Build
+- **Core:** [Electron](https://www.electronjs.org/) (Motor de escritorio)
+- **Frontend:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Lenguaje:** [TypeScript](https://www.typescriptlang.org/) (Tipado estricto)
+- **Base de Datos:** [Better-SQLite3](https://github.com/WiseLibs/better-sqlite3) (Local y síncrona)
+- **Estilos:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **Iconos:** [Lucide React](https://lucide.dev/)
+- **Manejo de Fechas:** [date-fns](https://date-fns.org/)
 
-```bash
-# For windows
-$ npm run build:win
+---
 
-# For macOS
-$ npm run build:mac
+## 🗄️ Esquema de Base de Datos
 
-# For Linux
-$ npm run build:linux
-```
+La aplicación utiliza una base de datos relacional SQLite local (`dental.db`).
+
+### Tablas Principales
+
+- **`patients`**: Información personal, DNI, contacto y notas médicas.
+- **`appointments`**: Turnos asociados a un paciente (Fecha, Hora, Estado).
+- **`treatments`**: Catálogo de prestaciones y precios base.
+- **`clinical_records`**: Historial de lo realizado en cada sesión (Evolución).
+- **`payments`**: Registro de ingresos monetarios.
+
+---
+
+## 🚀 Instalación y Desarrollo
+
+### Requisitos previos
+
+- Node.js (Recomendado v20 o superior)
+- Git
+
+### Pasos para iniciar
+
+1.  **Clonar el repositorio:**
+
+    ```bash
+    git clone [https://github.com/tu-usuario/dental-manager.git](https://github.com/tu-usuario/dental-manager.git)
+    cd dental-manager
+    ```
+
+2.  **Instalar dependencias:**
+
+    ```bash
+    npm install
+    ```
+
+3.  **Compilar dependencias nativas (SQLite):**
+    Si cambias de sistema operativo o versión de Node, ejecuta:
+
+    ```bash
+    npm run postinstall
+    ```
+
+4.  **Iniciar en modo desarrollo:**
+    ```bash
+    npm run dev
+    ```
