@@ -4,8 +4,6 @@ import { app } from 'electron'
 
 const isDev = process.env.NODE_ENV === 'development'
 
-// En desarrollo: guardamos dental.db en la raíz del proyecto
-// En producción: en la carpeta de datos del usuario
 const dbPath = isDev
   ? path.join(__dirname, '../../dental.db')
   : path.join(app.getPath('userData'), 'dental.db')
@@ -14,7 +12,6 @@ const db: Database.Database = new Database(dbPath)
 db.pragma('journal_mode = WAL')
 
 const migrations = [
-  // V1: Pacientes y Tratamientos
   (db: Database.Database) => {
     db.exec(`
       CREATE TABLE IF NOT EXISTS patients (
@@ -28,7 +25,6 @@ const migrations = [
         medical_notes TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
-
       CREATE TABLE IF NOT EXISTS treatments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -36,7 +32,6 @@ const migrations = [
       );
     `)
   },
-  // V2: Agenda
   (db: Database.Database) => {
     db.exec(`
       CREATE TABLE IF NOT EXISTS appointments (
@@ -50,7 +45,6 @@ const migrations = [
       );
     `)
   },
-  // V3: Historia y Pagos
   (db: Database.Database) => {
     db.exec(`
       CREATE TABLE IF NOT EXISTS clinical_records (
@@ -63,7 +57,6 @@ const migrations = [
         FOREIGN KEY(patient_id) REFERENCES patients(id),
         FOREIGN KEY(treatment_id) REFERENCES treatments(id)
       );
-
       CREATE TABLE IF NOT EXISTS payments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         patient_id INTEGER NOT NULL,
@@ -85,7 +78,6 @@ for (let i = currentVersion; i < migrations.length; i++) {
     db.pragma(`user_version = ${i + 1}`)
   })
   runMigration()
-  console.log(`✅ Migración v${i + 1} aplicada.`)
 }
 
 export { db }
