@@ -1,10 +1,78 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-background: hsl(222.2 84% 4.9%);
-  --color-foreground: hsl(210 40% 98%);
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* --- MODO CLARO (LIGHT MODE) --- */
+
+  /* Fondo blanco puro */
+  --color-background: hsl(0 0% 100%);
+  /* Texto oscuro (casi negro) */
+  --color-foreground: hsl(222.2 84% 4.9%);
+
+  /* Tarjetas y Modales (Dialogs) */
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 84% 4.9%);
+
+  /* Popovers (Menús desplegables) */
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222.2 84% 4.9%);
+
+  /* Color Primario (Negro suave / Slate 900) */
+  --color-primary: hsl(222.2 47.4% 11.2%);
+  --color-primary-foreground: hsl(210 40% 98%);
+
+  /* Color Secundario (Gris claro) */
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+
+  /* Elementos desactivados o fondos sutiles */
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+
+  /* Acentos (Hover en tablas, etc) */
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+
+  /* Errores (Rojo) */
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+
+  /* Bordes e Inputs */
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(222.2 84% 4.9%);
+
+  --radius: 0.5rem;
+
+  /* Animaciones básicas */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
 }
 
-body {
-  @apply bg-white text-slate-900;
+/* Estilos globales */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
 }
