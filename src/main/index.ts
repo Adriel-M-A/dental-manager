@@ -6,6 +6,7 @@ import './db'
 import { setupPatientsHandlers } from './handlers/patientsHandler'
 import { setupAppointmentsHandlers } from './handlers/appointmentsHandler'
 import { setupClinicalHandlers } from './handlers/clinicalHandler'
+import { setupTreatmentsHandlers } from './handlers/treatmentsHandler'
 
 function createWindow(): void {
   // Create the browser window.
@@ -60,6 +61,7 @@ app.whenReady().then(() => {
   setupPatientsHandlers()
   setupAppointmentsHandlers()
   setupClinicalHandlers()
+  setupTreatmentsHandlers()
 
   createWindow()
 

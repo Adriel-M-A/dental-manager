@@ -13,6 +13,10 @@ declare global {
       getClinicalRecords: (patientId: number) => Promise<any[]>
       addClinicalRecord: (record: any) => Promise<any>
       deleteClinicalRecord: (id: number) => Promise<any>
+      getTreatments: () => Promise<any[]>
+      addTreatment: (t: any) => Promise<any>
+      updateTreatment: (t: any) => Promise<any>
+      deleteTreatment: (id: number) => Promise<any>
     }
   }
 }
