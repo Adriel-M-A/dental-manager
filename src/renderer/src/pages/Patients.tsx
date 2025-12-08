@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, Trash2, Edit } from 'lucide-react'
+import { Search, Trash2, Edit, FileText } from 'lucide-react' // <--- Importamos FileText
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -11,16 +11,13 @@ import {
 } from '@/components/ui/table'
 import { CreatePatientDialog } from '@/components/patients/CreatePatientDialog'
 
-interface Patient {
-  id?: number
-  name: string
-  dni: string
-  phone: string
-  email: string
+// Definimos que el componente acepta la función de click
+interface PatientsProps {
+  onPatientClick?: (id: number) => void
 }
 
-export default function Patients() {
-  const [patients, setPatients] = useState<Patient[]>([])
+export default function Patients({ onPatientClick }: PatientsProps) {
+  const [patients, setPatients] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
   const loadPatients = async () => {
@@ -51,18 +48,14 @@ export default function Patients() {
 
   return (
     <div className="p-6 space-y-6 animate-in fade-in duration-500">
-      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Pacientes</h2>
           <p className="text-slate-500">Gestión de historias clínicas</p>
         </div>
-
-        {/* Aquí usamos el nuevo componente */}
         <CreatePatientDialog onPatientSaved={loadPatients} />
       </div>
 
-      {/* FILTROS */}
       <div className="flex items-center space-x-2 bg-white border border-slate-200 rounded-md px-3 py-2 w-full max-w-sm shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20">
         <Search className="w-4 h-4 text-slate-400" />
         <input
@@ -73,15 +66,14 @@ export default function Patients() {
         />
       </div>
 
-      {/* TABLA */}
       <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow className="hover:bg-transparent">
               <TableHead className="font-semibold text-slate-700 w-[30%]">Nombre</TableHead>
               <TableHead className="font-semibold text-slate-700 w-[20%]">DNI</TableHead>
-              <TableHead className="font-semibold text-slate-700 w-[30%]">Contacto</TableHead>
-              <TableHead className="text-right font-semibold text-slate-700 w-[20%]">
+              <TableHead className="font-semibold text-slate-700 w-[20%]">Contacto</TableHead>
+              <TableHead className="text-right font-semibold text-slate-700 w-[30%]">
                 Acciones
               </TableHead>
             </TableRow>
@@ -96,14 +88,26 @@ export default function Patients() {
                     {patient.phone || patient.email || '-'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
+                      {/* BOTÓN FICHA (NUEVO) */}
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                        title="Ver Historia Clínica"
+                        onClick={() => onPatientClick && patient.id && onPatientClick(patient.id)}
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
+
                       <Button
                         variant="ghost"
                         size="icon"

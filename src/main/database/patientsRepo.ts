@@ -41,3 +41,7 @@ export function deletePatient(id: number): RunResult {
 export function getPatientByDNI(dni: string): Patient | undefined {
   return db.prepare('SELECT * FROM patients WHERE dni = ?').get(dni) as Patient | undefined
 }
+
+export function getPatientById(id: number): Patient | undefined {
+  return db.prepare('SELECT * FROM patients WHERE id = ?').get(id) as Patient | undefined
+}

@@ -9,6 +9,7 @@ declare global {
       updatePatient: (patient: any) => Promise<any>
       deletePatient: (id: number) => Promise<any>
       getPatientByDNI: (dni: string) => Promise<any>
+      getPatientById: (id: number) => Promise<any>
     }
   }
 }

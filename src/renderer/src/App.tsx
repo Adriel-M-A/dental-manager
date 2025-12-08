@@ -3,20 +3,32 @@ import Layout from './components/Layout'
 
 import Agenda from './pages/Agenda'
 import Patients from './pages/Patients'
+import PatientDetail from './pages/PatientDetail'
 import Finance from './pages/Finance'
 import Treatments from './pages/Treatments'
 import Settings from './pages/Settings'
 
 function App(): JSX.Element {
-  const [currentView, setCurrentView] = useState('agenda')
+  const [navState, setNavState] = useState<{ view: string; data?: any }>({
+    view: 'agenda'
+  })
 
-  // Lógica simple para renderizar la vista actual
+  // Función helper para navegar
+  const handleNavigate = (view: string, data?: any) => {
+    setNavState({ view, data })
+  }
+
   const renderView = () => {
-    switch (currentView) {
+    switch (navState.view) {
       case 'agenda':
         return <Agenda />
+
       case 'patients':
-        return <Patients />
+        return <Patients onPatientClick={(id) => handleNavigate('patient-detail', id)} />
+
+      case 'patient-detail':
+        return <PatientDetail patientId={navState.data} onBack={() => handleNavigate('patients')} />
+
       case 'finance':
         return <Finance />
       case 'treatments':
@@ -29,7 +41,7 @@ function App(): JSX.Element {
   }
 
   return (
-    <Layout currentView={currentView} onNavigate={setCurrentView}>
+    <Layout currentView={navState.view} onNavigate={(v) => handleNavigate(v)}>
       {renderView()}
     </Layout>
   )

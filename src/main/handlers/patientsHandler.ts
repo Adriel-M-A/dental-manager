@@ -21,4 +21,8 @@ export function setupPatientsHandlers() {
   ipcMain.handle('get-patient-by-dni', (_, dni: string) => {
     return repo.getPatientByDNI(dni)
   })
+
+  ipcMain.handle('get-patient-by-id', (_, id: number) => {
+    return repo.getPatientById(id)
+  })
 }
