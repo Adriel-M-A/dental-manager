@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, Trash2, Edit, FileText } from 'lucide-react' // <--- Importamos FileText
+import { Search, Trash2, Edit, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/table'
 import { CreatePatientDialog } from '@/components/patients/CreatePatientDialog'
 
-// Definimos que el componente acepta la función de click
 interface PatientsProps {
   onPatientClick?: (id: number) => void
 }
@@ -25,7 +24,7 @@ export default function Patients({ onPatientClick }: PatientsProps) {
       const data = await window.api.getPatients()
       setPatients(data)
     } catch (error) {
-      console.error('Error cargando pacientes:', error)
+      console.error(error)
     }
   }
 
@@ -40,11 +39,10 @@ export default function Patients({ onPatientClick }: PatientsProps) {
     }
   }
 
-  const filteredPatients = patients.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.dni && p.dni.includes(searchTerm))
-  )
+  const filteredPatients = patients.filter((p) => {
+    const fullName = p.name ? p.name.toLowerCase() : `${p.first_name} ${p.last_name}`.toLowerCase()
+    return fullName.includes(searchTerm.toLowerCase()) || (p.dni && p.dni.includes(searchTerm))
+  })
 
   return (
     <div className="p-6 space-y-6 animate-in fade-in duration-500">
@@ -89,7 +87,6 @@ export default function Patients({ onPatientClick }: PatientsProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      {/* BOTÓN FICHA (NUEVO) */}
                       <Button
                         variant="ghost"
                         size="icon"

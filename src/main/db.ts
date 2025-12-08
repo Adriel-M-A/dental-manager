@@ -16,7 +16,8 @@ const migrations = [
     db.exec(`
       CREATE TABLE IF NOT EXISTS patients (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
         dni TEXT UNIQUE,
         phone TEXT,
         email TEXT,

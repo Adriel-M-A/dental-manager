@@ -21,12 +21,13 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
     dni: '',
     phone: '',
     email: '',
     address: '',
-    birth_date: '', // <--- AGREGADO: Necesario para la base de datos
+    birth_date: '',
     medical_notes: ''
   })
 
@@ -41,9 +42,9 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
     try {
       await window.api.addPatient(formData)
 
-      // Limpiar y cerrar
       setFormData({
-        name: '',
+        first_name: '',
+        last_name: '',
         dni: '',
         phone: '',
         email: '',
@@ -54,7 +55,7 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
       setOpen(false)
       onPatientSaved()
     } catch (error) {
-      console.error('Error creando paciente:', error)
+      console.error(error)
     } finally {
       setLoading(false)
     }
@@ -68,7 +69,7 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Paciente</DialogTitle>
           <DialogDescription>Datos personales para la historia clínica.</DialogDescription>
@@ -76,21 +77,33 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            {/* Nombre */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Nombre <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="col-span-3"
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="first_name">
+                  Nombre <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  placeholder="Juan"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="last_name">
+                  Apellido <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  placeholder="Pérez"
+                  required
+                />
+              </div>
             </div>
 
-            {/* DNI */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="dni" className="text-right">
                 DNI
@@ -98,7 +111,6 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
               <Input id="dni" value={formData.dni} onChange={handleChange} className="col-span-3" />
             </div>
 
-            {/* Teléfono */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="phone" className="text-right">
                 Teléfono
@@ -111,7 +123,6 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
               />
             </div>
 
-            {/* Email */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="email" className="text-right">
                 Email
@@ -125,7 +136,6 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
               />
             </div>
 
-            {/* Fecha de Nacimiento (NUEVO) */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="birth_date" className="text-right">
                 Nacimiento

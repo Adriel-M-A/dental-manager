@@ -4,19 +4,18 @@ import { RunResult } from 'better-sqlite3'
 export interface Appointment {
   id?: number
   patient_id: number
-  date: string // Formato YYYY-MM-DD
-  time: string // Formato HH:mm
+  date: string
+  time: string
   status: 'pending' | 'completed' | 'cancelled' | 'absent'
   notes?: string
-  patient_name?: string // Para mostrar en la tabla sin hacer otra consulta
+  patient_name?: string
 }
 
-// Obtener turnos de un rango de fechas (ej: mes actual)
 export function getAppointments(startDate: string, endDate: string): Appointment[] {
   return db
     .prepare(
       `
-    SELECT a.*, p.name as patient_name 
+    SELECT a.*, (p.first_name || ' ' || p.last_name) as patient_name 
     FROM appointments a
     JOIN patients p ON a.patient_id = p.id
     WHERE a.date BETWEEN @startDate AND @endDate
