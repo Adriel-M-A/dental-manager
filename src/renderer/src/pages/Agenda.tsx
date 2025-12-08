@@ -6,10 +6,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Clock, FileText, Trash2, CheckCircle, Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { NewAppointmentDialog } from '@/components/appointments/NewAppointmentDialog'
+import { CompleteAppointmentDialog } from '@/components/appointments/CompleteAppointmentDialog' // <--- IMPORTAR
 
 export default function Agenda() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [appointments, setAppointments] = useState<any[]>([])
+
+  // Estado para manejar el turno que se está completando
+  const [appointmentToComplete, setAppointmentToComplete] = useState<any | null>(null)
 
   const loadAppointments = async () => {
     if (!date) return
@@ -29,13 +33,14 @@ export default function Agenda() {
     loadAppointments()
   }, [date])
 
+  // Esta función ahora solo se usa para Cancelar o deshacer
   const handleStatusChange = async (id: number, status: string) => {
     await window.api.updateAppointmentStatus(id, status)
     loadAppointments()
   }
 
   const handleDelete = async (id: number) => {
-    if (confirm('¿Cancelar este turno?')) {
+    if (confirm('¿Eliminar este turno definitivamente?')) {
       await window.api.deleteAppointment(id)
       loadAppointments()
     }
@@ -60,7 +65,7 @@ export default function Agenda() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* IZQUIERDA: CALENDARIO (Centrado) */}
+        {/* IZQUIERDA: CALENDARIO */}
         <div className="flex-1 p-8 flex justify-center items-center overflow-auto">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
             <Calendar
@@ -83,7 +88,7 @@ export default function Agenda() {
           </div>
         </div>
 
-        {/* DERECHA: LISTA DE TURNOS (Ancho aumentado a 500px) */}
+        {/* DERECHA: LISTA DE TURNOS */}
         <div className="w-[500px] border-l border-slate-200 bg-white h-full flex flex-col">
           <div className="p-4 border-b border-slate-100 bg-slate-50/50">
             <h3 className="font-semibold text-slate-700 flex items-center gap-2">
@@ -151,8 +156,9 @@ export default function Agenda() {
                               size="icon"
                               variant="ghost"
                               className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => handleStatusChange(apt.id, 'completed')}
-                              title="Completar"
+                              // CAMBIO AQUÍ: Ahora seteamos el estado para abrir el modal
+                              onClick={() => setAppointmentToComplete(apt)}
+                              title="Completar y Generar Evolución"
                             >
                               <CheckCircle className="w-4 h-4" />
                             </Button>
@@ -176,6 +182,19 @@ export default function Agenda() {
           </div>
         </div>
       </div>
+
+      {/* Renderizamos el Modal Condicionalmente */}
+      {appointmentToComplete && (
+        <CompleteAppointmentDialog
+          isOpen={!!appointmentToComplete}
+          appointment={appointmentToComplete}
+          onClose={() => setAppointmentToComplete(null)}
+          onSuccess={() => {
+            loadAppointments()
+            // Aquí podrías agregar un toast de éxito
+          }}
+        />
+      )}
     </div>
   )
 }
