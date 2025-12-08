@@ -22,7 +22,11 @@ const dentalAPI = {
 
   getPatientByDNI: (dni: string) => ipcRenderer.invoke('get-patient-by-dni', dni),
 
-  getPatientById: (id: number) => ipcRenderer.invoke('get-patient-by-id', id)
+  getPatientById: (id: number) => ipcRenderer.invoke('get-patient-by-id', id),
+
+  getClinicalRecords: (patientId: number) => ipcRenderer.invoke('get-clinical-records', patientId),
+  addClinicalRecord: (record: any) => ipcRenderer.invoke('add-clinical-record', record),
+  deleteClinicalRecord: (id: number) => ipcRenderer.invoke('delete-clinical-record', id)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -2,9 +2,10 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import './db' // Importamos la base de datos para que se inicialice
+import './db'
 import { setupPatientsHandlers } from './handlers/patientsHandler'
-import { setupAppointmentsHandlers } from './handlers/appointmentsHandler' // <--- NUEVO
+import { setupAppointmentsHandlers } from './handlers/appointmentsHandler'
+import { setupClinicalHandlers } from './handlers/clinicalHandler'
 
 function createWindow(): void {
   // Create the browser window.
@@ -57,7 +58,8 @@ app.whenReady().then(() => {
 
   // --- REGISTRAR HANDLERS ---
   setupPatientsHandlers()
-  setupAppointmentsHandlers() // <--- NUEVO: Registramos la agenda
+  setupAppointmentsHandlers()
+  setupClinicalHandlers()
 
   createWindow()
 
