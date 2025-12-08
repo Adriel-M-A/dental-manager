@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Loader2 } from 'lucide-react' // Agregamos icono de carga
+import { Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +26,7 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
     phone: '',
     email: '',
     address: '',
+    birth_date: '', // <--- AGREGADO: Necesario para la base de datos
     medical_notes: ''
   })
 
@@ -41,13 +42,19 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
       await window.api.addPatient(formData)
 
       // Limpiar y cerrar
-      setFormData({ name: '', dni: '', phone: '', email: '', address: '', medical_notes: '' })
+      setFormData({
+        name: '',
+        dni: '',
+        phone: '',
+        email: '',
+        address: '',
+        birth_date: '',
+        medical_notes: ''
+      })
       setOpen(false)
-
-      // Refrescar lista
       onPatientSaved()
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Error creando paciente:', error)
     } finally {
       setLoading(false)
     }
@@ -64,9 +71,7 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Paciente</DialogTitle>
-          <DialogDescription>
-            Complete los datos básicos para abrir una nueva historia clínica.
-          </DialogDescription>
+          <DialogDescription>Datos personales para la historia clínica.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -81,7 +86,6 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
                 value={formData.name}
                 onChange={handleChange}
                 className="col-span-3"
-                placeholder="Juan Pérez"
                 required
               />
             </div>
@@ -91,13 +95,7 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
               <Label htmlFor="dni" className="text-right">
                 DNI
               </Label>
-              <Input
-                id="dni"
-                value={formData.dni}
-                onChange={handleChange}
-                className="col-span-3"
-                placeholder="12345678"
-              />
+              <Input id="dni" value={formData.dni} onChange={handleChange} className="col-span-3" />
             </div>
 
             {/* Teléfono */}
@@ -110,7 +108,6 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
                 value={formData.phone}
                 onChange={handleChange}
                 className="col-span-3"
-                placeholder="+54 9 11..."
               />
             </div>
 
@@ -125,7 +122,20 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
                 value={formData.email}
                 onChange={handleChange}
                 className="col-span-3"
-                placeholder="juan@mail.com"
+              />
+            </div>
+
+            {/* Fecha de Nacimiento (NUEVO) */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="birth_date" className="text-right">
+                Nacimiento
+              </Label>
+              <Input
+                id="birth_date"
+                type="date"
+                value={formData.birth_date}
+                onChange={handleChange}
+                className="col-span-3"
               />
             </div>
           </div>
@@ -133,7 +143,7 @@ export function CreatePatientDialog({ onPatientSaved }: CreatePatientDialogProps
           <DialogFooter>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading ? 'Guardando...' : 'Guardar Paciente'}
+              Guardar
             </Button>
           </DialogFooter>
         </form>

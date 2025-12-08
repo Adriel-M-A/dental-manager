@@ -2,7 +2,9 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import './db'
+import './db' // Importamos la base de datos para que se inicialice
+import { setupPatientsHandlers } from './handlers/patientsHandler'
+import { setupAppointmentsHandlers } from './handlers/appointmentsHandler' // <--- NUEVO
 
 function createWindow(): void {
   // Create the browser window.
@@ -53,6 +55,10 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  // --- REGISTRAR HANDLERS ---
+  setupPatientsHandlers()
+  setupAppointmentsHandlers() // <--- NUEVO: Registramos la agenda
+
   createWindow()
 
   app.on('activate', function () {
@@ -70,6 +76,3 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
