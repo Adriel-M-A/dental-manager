@@ -17,4 +17,8 @@ export function setupPatientsHandlers() {
   ipcMain.handle('delete-patient', (_, id: number) => {
     return repo.deletePatient(id)
   })
+
+  ipcMain.handle('get-patient-by-dni', (_, dni: string) => {
+    return repo.getPatientByDNI(dni)
+  })
 }

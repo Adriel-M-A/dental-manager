@@ -18,7 +18,9 @@ const dentalAPI = {
   updateAppointmentStatus: (id: number, status: string) =>
     ipcRenderer.invoke('update-appointment-status', { id, status }),
 
-  deleteAppointment: (id: number) => ipcRenderer.invoke('delete-appointment', id)
+  deleteAppointment: (id: number) => ipcRenderer.invoke('delete-appointment', id),
+
+  getPatientByDNI: (dni: string) => ipcRenderer.invoke('get-patient-by-dni', dni)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
