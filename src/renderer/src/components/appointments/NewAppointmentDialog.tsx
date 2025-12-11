@@ -1,5 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
-import { Plus, Loader2, Search, User, Phone, Clock, Mail } from 'lucide-react'
+import { useState } from 'react'
+import {
+  Plus,
+  Loader2,
+  Search,
+  User,
+  Phone,
+  Clock,
+  Mail,
+  ChevronUp,
+  ChevronDown
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
@@ -15,7 +25,6 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog'
-import { cn } from '@/lib/utils'
 
 interface NewAppointmentDialogProps {
   onAppointmentSaved: () => void
@@ -25,20 +34,15 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Estado del Formulario
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [hour, setHour] = useState('09')
   const [minute, setMinute] = useState('00')
   const [notes, setNotes] = useState('')
 
-  // Estado de Búsqueda
   const [searchDni, setSearchDni] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null)
   const [searchError, setSearchError] = useState('')
   const [isSearching, setIsSearching] = useState(false)
-
-  // Referencias para el scroll automático (opcional, para mejorar UX luego)
-  const hoursRef = useRef<HTMLDivElement>(null)
 
   const resetForm = () => {
     setDate(new Date())
@@ -58,11 +62,46 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
     }
   }
 
+  // --- LÓGICA DE TIEMPO ---
+  const adjustHour = (increment: boolean) => {
+    let newHour = parseInt(hour)
+    if (isNaN(newHour)) newHour = 9
+    if (increment) newHour = newHour >= 23 ? 0 : newHour + 1
+    else newHour = newHour <= 0 ? 23 : newHour - 1
+    setHour(newHour.toString().padStart(2, '0'))
+  }
+
+  const adjustMinute = (increment: boolean) => {
+    let newMin = parseInt(minute)
+    if (isNaN(newMin)) newMin = 0
+    if (increment) newMin = newMin >= 55 ? 0 : newMin + 5
+    else newMin = newMin <= 0 ? 55 : newMin - 5
+    setMinute(newMin.toString().padStart(2, '0'))
+  }
+
+  const handleManualTimeChange = (type: 'hour' | 'minute', value: string) => {
+    if (!/^\d*$/.test(value)) return
+    if (value.length > 2) return
+    if (type === 'hour') setHour(value)
+    if (type === 'minute') setMinute(value)
+  }
+
+  const handleBlurTime = (type: 'hour' | 'minute') => {
+    if (type === 'hour') {
+      let val = parseInt(hour) || 0
+      val = Math.min(23, Math.max(0, val))
+      setHour(val.toString().padStart(2, '0'))
+    } else {
+      let val = parseInt(minute) || 0
+      val = Math.min(59, Math.max(0, val))
+      setMinute(val.toString().padStart(2, '0'))
+    }
+  }
+  // --- FIN LÓGICA TIEMPO ---
+
   const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    if (/^\d*$/.test(value)) {
-      setSearchDni(value)
-    }
+    if (/^\d*$/.test(value)) setSearchDni(value)
   }
 
   const handleSearchPatient = async () => {
@@ -88,7 +127,6 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
 
   const handleSubmit = async () => {
     if (!date || !selectedPatient) return
-
     setLoading(true)
     try {
       const finalTime = `${hour}:${minute}`
@@ -99,7 +137,6 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
         status: 'pending',
         notes: notes
       })
-
       setOpen(false)
       onAppointmentSaved()
       resetForm()
@@ -109,13 +146,6 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
       setLoading(false)
     }
   }
-
-  // Generamos horas (08 a 22 para un horario normal de consultorio, o 00-23 si prefieres)
-  const hours = Array.from({ length: 15 }, (_, i) => (i + 8).toString().padStart(2, '0'))
-  // Nota: Si quieres las 24hs cambia el length a 24 y quita el +8
-
-  // Minutos cada 5 (00, 05, 10...)
-  const minutes = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'))
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -130,12 +160,13 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
           <DialogTitle className="text-xl">Nuevo Turno</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col md:flex-row h-[550px]">
-          {/* COLUMNA 1: FECHA Y HORA */}
-          <div className="w-full md:w-[380px] bg-slate-50 border-r border-slate-100 p-6 flex flex-col gap-6">
-            {/* Calendario */}
-            <div className="w-full flex justify-center">
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 inline-block">
+        <div className="flex flex-col md:flex-row h-[480px]">
+          {/* COLUMNA 1: FECHA Y HORA (COMPACTA) */}
+          <div className="w-full md:w-[360px] bg-slate-50 border-r border-slate-100 p-6 flex flex-col gap-4">
+            {/* Contenedor Unificado */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              {/* Calendario */}
+              <div className="p-3 border-b border-slate-100 flex justify-center">
                 <Calendar
                   mode="single"
                   selected={date}
@@ -143,72 +174,72 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
                   locale={es}
                   className="rounded-md"
                   classNames={{
-                    head_cell: 'text-slate-400 font-normal text-[0.8rem]',
-                    cell: 'h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-slate-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
-                    day: 'h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-slate-100 rounded-md',
+                    head_cell: 'text-slate-400 font-normal text-[0.8rem] w-8',
+                    cell: 'h-8 w-8 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-slate-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                    day: 'h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-slate-100 rounded-md',
                     day_selected:
                       'bg-slate-900 text-white hover:bg-slate-900 hover:text-white focus:bg-slate-900 focus:text-white',
                     day_today: 'bg-slate-100 text-slate-900 font-bold'
                   }}
                 />
               </div>
-            </div>
 
-            {/* SELECCIÓN DE HORA (LISTA VISUAL) */}
-            <div className="flex-1 flex flex-col min-h-0">
-              <Label className="flex items-center gap-2 text-slate-600 mb-2">
-                <Clock className="w-4 h-4" /> Seleccionar Horario
-              </Label>
-
-              <div className="flex-1 flex border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
-                {/* Columna Horas */}
-                <div className="flex-1 flex flex-col border-r border-slate-100">
-                  <div className="bg-slate-50 p-2 text-center text-xs font-semibold text-slate-500 border-b border-slate-100">
-                    HORA
-                  </div>
-                  <div className="overflow-y-auto p-1 custom-scrollbar">
-                    <div className="grid grid-cols-1 gap-1">
-                      {hours.map((h) => (
-                        <button
-                          key={h}
-                          type="button"
-                          onClick={() => setHour(h)}
-                          className={cn(
-                            'py-2 rounded text-sm font-medium transition-colors',
-                            hour === h
-                              ? 'bg-slate-900 text-white shadow-sm'
-                              : 'text-slate-600 hover:bg-slate-100'
-                          )}
-                        >
-                          {h}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {/* SECCIÓN HORA COMPACTA CON CONTROLES SÓLIDOS */}
+              <div className="bg-slate-50/50 p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-slate-600 font-medium text-sm">
+                  <Clock className="w-4 h-4" /> Horario:
                 </div>
 
-                {/* Columna Minutos */}
-                <div className="flex-1 flex flex-col">
-                  <div className="bg-slate-50 p-2 text-center text-xs font-semibold text-slate-500 border-b border-slate-100">
-                    MINUTOS
+                <div className="flex items-center gap-2">
+                  {/* INPUT HORA (Estilo Spinner) */}
+                  <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-white h-9 shadow-sm">
+                    <input
+                      type="text"
+                      className="w-10 h-full text-center font-bold text-slate-800 outline-none border-none bg-transparent"
+                      value={hour}
+                      onChange={(e) => handleManualTimeChange('hour', e.target.value)}
+                      onBlur={() => handleBlurTime('hour')}
+                    />
+                    <div className="flex flex-col border-l border-slate-200 w-5 bg-slate-50">
+                      <button
+                        onClick={() => adjustHour(true)}
+                        className="h-1/2 flex items-center justify-center hover:bg-slate-200 active:bg-slate-300 transition-colors border-b border-slate-200 cursor-pointer"
+                      >
+                        <ChevronUp className="w-3 h-3 text-slate-500" />
+                      </button>
+                      <button
+                        onClick={() => adjustHour(false)}
+                        className="h-1/2 flex items-center justify-center hover:bg-slate-200 active:bg-slate-300 transition-colors cursor-pointer"
+                      >
+                        <ChevronDown className="w-3 h-3 text-slate-500" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="overflow-y-auto p-1 custom-scrollbar">
-                    <div className="grid grid-cols-1 gap-1">
-                      {minutes.map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => setMinute(m)}
-                          className={cn(
-                            'py-2 rounded text-sm font-medium transition-colors',
-                            minute === m
-                              ? 'bg-slate-900 text-white shadow-sm'
-                              : 'text-slate-600 hover:bg-slate-100'
-                          )}
-                        >
-                          {m}
-                        </button>
-                      ))}
+
+                  <span className="font-bold text-slate-300">:</span>
+
+                  {/* INPUT MINUTOS (Estilo Spinner) */}
+                  <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-white h-9 shadow-sm">
+                    <input
+                      type="text"
+                      className="w-10 h-full text-center font-bold text-slate-800 outline-none border-none bg-transparent"
+                      value={minute}
+                      onChange={(e) => handleManualTimeChange('minute', e.target.value)}
+                      onBlur={() => handleBlurTime('minute')}
+                    />
+                    <div className="flex flex-col border-l border-slate-200 w-5 bg-slate-50">
+                      <button
+                        onClick={() => adjustMinute(true)}
+                        className="h-1/2 flex items-center justify-center hover:bg-slate-200 active:bg-slate-300 transition-colors border-b border-slate-200 cursor-pointer"
+                      >
+                        <ChevronUp className="w-3 h-3 text-slate-500" />
+                      </button>
+                      <button
+                        onClick={() => adjustMinute(false)}
+                        className="h-1/2 flex items-center justify-center hover:bg-slate-200 active:bg-slate-300 transition-colors cursor-pointer"
+                      >
+                        <ChevronDown className="w-3 h-3 text-slate-500" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -217,17 +248,17 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
           </div>
 
           {/* COLUMNA 2: PACIENTE Y DETALLES */}
-          <div className="flex-1 p-6 flex flex-col gap-5 overflow-y-auto">
+          <div className="flex-1 p-6 flex flex-col gap-5 overflow-y-auto bg-white">
             <div className="space-y-3">
               <Label className="text-slate-600">Buscar Paciente</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Ingrese DNI (Solo números)..."
+                  placeholder="DNI del paciente..."
                   value={searchDni}
                   onChange={handleDniChange}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchPatient()}
                   autoFocus
-                  className="bg-white"
+                  className="bg-slate-50 border-slate-200"
                 />
                 <Button
                   type="button"
@@ -262,7 +293,7 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
                         </span>
                       </div>
                       <span className="font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded text-sm">
-                        DNI: {selectedPatient.dni}
+                        {selectedPatient.dni}
                       </span>
                     </div>
 
@@ -294,7 +325,7 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
               <Label className="text-slate-600">Notas Adicionales</Label>
               <Textarea
                 placeholder="Motivo de la consulta..."
-                className="resize-none flex-1 min-h-[100px] bg-white"
+                className="resize-none flex-1 min-h-[100px] bg-slate-50 border-slate-200"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
