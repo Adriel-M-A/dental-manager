@@ -17,6 +17,9 @@ declare global {
       addTreatment: (t: any) => Promise<any>
       updateTreatment: (t: any) => Promise<any>
       deleteTreatment: (id: number) => Promise<any>
+      getPayments: (patientId: number) => Promise<any[]>
+      addPayment: (payment: any) => Promise<any>
+      deletePayment: (id: number) => Promise<any>
     }
   }
 }

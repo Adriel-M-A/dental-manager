@@ -1,11 +1,31 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, User, FileText, CreditCard, Activity, Trash2, Calendar } from 'lucide-react'
+import {
+  ArrowLeft,
+  User,
+  FileText,
+  CreditCard,
+  Activity,
+  Trash2,
+  Calendar,
+  TrendingDown,
+  TrendingUp
+} from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table'
 import { AddEvolutionDialog } from '@/components/patients/AddEvolutionDialog'
+import { AddPaymentDialog } from '@/components/patients/AddPaymentDialog'
 
 interface PatientDetailProps {
   patientId: number
@@ -15,6 +35,9 @@ interface PatientDetailProps {
 export default function PatientDetail({ patientId, onBack }: PatientDetailProps) {
   const [patient, setPatient] = useState<any>(null)
   const [records, setRecords] = useState<any[]>([])
+  const [payments, setPayments] = useState<any[]>([])
+  const [movements, setMovements] = useState<any[]>([]) // Lista unificada
+  const [balance, setBalance] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
@@ -24,6 +47,39 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
 
       const recordsData = await window.api.getClinicalRecords(patientId)
       setRecords(recordsData)
+
+      const paymentsData = await window.api.getPayments(patientId)
+      setPayments(paymentsData)
+
+      // CALCULOS FINANCIEROS
+      // 1. Unificamos Historial y Pagos en una sola lista cronológica
+      const allMovements = [
+        ...recordsData
+          .filter((r: any) => r.cost > 0)
+          .map((r: any) => ({
+            id: r.id,
+            date: r.date,
+            description: r.description,
+            amount: r.cost,
+            type: 'charge', // Cargo/Deuda
+            original_id: r.id
+          })),
+        ...paymentsData.map((p: any) => ({
+          id: p.id,
+          date: p.date,
+          description: `Pago (${p.method}) ${p.notes ? '- ' + p.notes : ''}`,
+          amount: p.amount,
+          type: 'payment', // Pago/A favor
+          original_id: p.id
+        }))
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Ordenar por fecha desc
+
+      setMovements(allMovements)
+
+      // 2. Calcular Saldos
+      const totalDebt = recordsData.reduce((acc: number, r: any) => acc + (r.cost || 0), 0)
+      const totalPaid = paymentsData.reduce((acc: number, p: any) => acc + (p.amount || 0), 0)
+      setBalance(totalDebt - totalPaid)
     } catch (error) {
       console.error(error)
     } finally {
@@ -38,7 +94,14 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
   const handleDeleteRecord = async (id: number) => {
     if (confirm('¿Borrar este registro?')) {
       await window.api.deleteClinicalRecord(id)
-      loadData() // Recargar lista
+      loadData()
+    }
+  }
+
+  const handleDeletePayment = async (id: number) => {
+    if (confirm('¿Eliminar este pago? Esto afectará el saldo.')) {
+      await window.api.deletePayment(id)
+      loadData()
     }
   }
 
@@ -75,6 +138,17 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
               </span>
             </div>
           </div>
+
+          {/* INDICADOR DE SALDO GRANDE */}
+          <div
+            className={`px-4 py-2 rounded-lg border ${balance > 0 ? 'bg-red-50 border-red-100 text-red-700' : balance < 0 ? 'bg-green-50 border-green-100 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+          >
+            <p className="text-xs uppercase font-bold opacity-70">Saldo Actual</p>
+            <p className="text-2xl font-bold">
+              {balance > 0 ? 'Debe: ' : balance < 0 ? 'Favor: ' : ''}${' '}
+              {Math.abs(balance).toLocaleString()}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -98,24 +172,21 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
               value="payments"
               className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
             >
-              <CreditCard className="w-4 h-4" /> Pagos
+              <CreditCard className="w-4 h-4" /> Cuenta Corriente
             </TabsTrigger>
           </TabsList>
 
           <Separator className="my-4 bg-slate-200" />
 
-          {/* CONTENIDO 1: HISTORIA CLÍNICA */}
+          {/* 1. HISTORIA CLÍNICA (Igual que antes) */}
           <TabsContent
             value="evolution"
             className="flex-1 border border-slate-200 rounded-xl bg-white flex flex-col shadow-sm mt-0 h-full overflow-hidden"
           >
-            {/* Header de la Pestaña */}
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h3 className="font-semibold text-slate-700">Historial de Tratamientos</h3>
               <AddEvolutionDialog patientId={patient.id} onRecordSaved={loadData} />
             </div>
-
-            {/* Lista Scrollable */}
             <div className="flex-1 overflow-auto p-6">
               {records.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
@@ -128,12 +199,9 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
                 <div className="space-y-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-0 before:w-0.5 before:bg-slate-200">
                   {records.map((record) => (
                     <div key={record.id} className="relative pl-10 group">
-                      {/* Punto en la línea de tiempo */}
                       <div className="absolute left-0 top-1.5 w-10 h-10 flex items-center justify-center">
                         <div className="w-3 h-3 bg-blue-500 rounded-full ring-4 ring-white shadow-sm z-10"></div>
                       </div>
-
-                      {/* Tarjeta del registro */}
                       <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm hover:border-blue-200 transition-colors">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -143,14 +211,7 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
                                 ? format(parseISO(record.date), "EEEE d 'de' MMMM, yyyy", {
                                     locale: es
                                   })
-                                : 'Fecha desconocida'}
-                            </span>
-                            <span className="text-slate-300">|</span>
-                            <span>
-                              {record.date
-                                ? format(parseISO(record.date), 'HH:mm', { locale: es })
-                                : ''}{' '}
-                              hs
+                                : '-'}
                             </span>
                           </div>
                           <Button
@@ -162,11 +223,9 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
-
                         <p className="text-slate-800 text-base whitespace-pre-wrap leading-relaxed">
                           {record.description}
                         </p>
-
                         {record.cost > 0 && (
                           <div className="mt-3 inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-md border border-green-100">
                             Costo: ${record.cost.toLocaleString()}
@@ -180,7 +239,7 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
             </div>
           </TabsContent>
 
-          {/* CONTENIDO 2: DATOS PERSONALES */}
+          {/* 2. DATOS PERSONALES */}
           <TabsContent
             value="general"
             className="flex-1 border border-slate-200 rounded-xl bg-white p-8 shadow-sm mt-0 h-full overflow-auto"
@@ -196,10 +255,10 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
               </div>
               <div className="space-y-1">
                 <h3 className="font-semibold text-slate-900 text-sm uppercase tracking-wide">
-                  Notas Médicas / Alergias
+                  Notas Médicas
                 </h3>
                 <p className="text-slate-600 p-3 bg-amber-50/50 rounded-md border border-amber-100 text-amber-900">
-                  {patient.medical_notes || 'Sin notas médicas.'}
+                  {patient.medical_notes || 'Sin notas.'}
                 </p>
               </div>
               <div className="space-y-1">
@@ -213,12 +272,124 @@ export default function PatientDetail({ patientId, onBack }: PatientDetailProps)
             </div>
           </TabsContent>
 
-          {/* CONTENIDO 3: PAGOS */}
+          {/* 3. CUENTA CORRIENTE (PAGOS) */}
           <TabsContent
             value="payments"
-            className="flex-1 border border-slate-200 rounded-xl bg-white p-6 shadow-sm mt-0 h-full"
+            className="flex-1 border border-slate-200 rounded-xl bg-white flex flex-col shadow-sm mt-0 h-full overflow-hidden"
           >
-            <p className="text-slate-400 text-center mt-10">Módulo de pagos próximamente...</p>
+            {/* Resumen Superior */}
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-semibold text-slate-700 text-lg">Movimientos de Cuenta</h3>
+                <AddPaymentDialog patientId={patient.id} onPaymentSaved={loadData} />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <Card className="bg-white shadow-sm border-slate-200">
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase">
+                      Total Tratamientos
+                    </p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      $ {records.reduce((acc, r) => acc + (r.cost || 0), 0).toLocaleString()}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white shadow-sm border-slate-200">
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase">Total Pagado</p>
+                    <p className="text-2xl font-bold text-green-600 mt-1">
+                      $ {payments.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString()}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card
+                  className={`shadow-sm border-slate-200 ${balance > 0 ? 'bg-red-50' : 'bg-green-50'}`}
+                >
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase">Saldo Final</p>
+                    <p
+                      className={`text-2xl font-bold mt-1 ${balance > 0 ? 'text-red-600' : 'text-green-700'}`}
+                    >
+                      $ {balance.toLocaleString()}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Tabla de Movimientos */}
+            <div className="flex-1 overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[150px]">Fecha</TableHead>
+                    <TableHead>Concepto</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {movements.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-32 text-center text-slate-400">
+                        No hay movimientos registrados.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    movements.map((mov, i) => (
+                      <TableRow key={`${mov.type}-${i}`}>
+                        <TableCell className="text-slate-500">
+                          {mov.date
+                            ? format(parseISO(mov.date), 'dd/MM/yyyy', { locale: es })
+                            : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {mov.type === 'charge' ? (
+                              <div className="p-1 bg-slate-100 rounded text-slate-500">
+                                <TrendingDown className="w-3 h-3" />
+                              </div>
+                            ) : (
+                              <div className="p-1 bg-green-100 rounded text-green-600">
+                                <TrendingUp className="w-3 h-3" />
+                              </div>
+                            )}
+                            <span
+                              className={
+                                mov.type === 'payment'
+                                  ? 'font-medium text-slate-900'
+                                  : 'text-slate-600'
+                              }
+                            >
+                              {mov.description}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell
+                          className={`text-right font-medium ${mov.type === 'charge' ? 'text-red-600' : 'text-green-600'}`}
+                        >
+                          {mov.type === 'charge' ? '-' : '+'} $ {mov.amount.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {/* Solo permitimos borrar pagos desde aquí. Los tratamientos se borran desde Evolución */}
+                          {mov.type === 'payment' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-slate-300 hover:text-red-500"
+                              onClick={() => handleDeletePayment(mov.original_id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
