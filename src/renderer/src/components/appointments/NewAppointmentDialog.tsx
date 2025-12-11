@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Loader2,
@@ -8,7 +8,8 @@ import {
   Clock,
   Mail,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Stethoscope
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -25,6 +26,13 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 
 interface NewAppointmentDialogProps {
   onAppointmentSaved: () => void
@@ -39,10 +47,19 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
   const [minute, setMinute] = useState('00')
   const [notes, setNotes] = useState('')
 
+  const [treatments, setTreatments] = useState<any[]>([])
+  const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('')
+
   const [searchDni, setSearchDni] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null)
   const [searchError, setSearchError] = useState('')
   const [isSearching, setIsSearching] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      window.api.getTreatments().then(setTreatments).catch(console.error)
+    }
+  }, [open])
 
   const resetForm = () => {
     setDate(new Date())
@@ -53,6 +70,7 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
     setSelectedPatient(null)
     setSearchError('')
     setIsSearching(false)
+    setSelectedTreatmentId('')
   }
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -62,7 +80,6 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
     }
   }
 
-  // --- LÓGICA DE TIEMPO ---
   const adjustHour = (increment: boolean) => {
     let newHour = parseInt(hour)
     if (isNaN(newHour)) newHour = 9
@@ -97,7 +114,6 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
       setMinute(val.toString().padStart(2, '0'))
     }
   }
-  // --- FIN LÓGICA TIEMPO ---
 
   const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -130,12 +146,21 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
     setLoading(true)
     try {
       const finalTime = `${hour}:${minute}`
+
+      let finalNotes = notes
+      if (selectedTreatmentId) {
+        const treatmentName = treatments.find((t) => t.id.toString() === selectedTreatmentId)?.name
+        if (treatmentName) {
+          finalNotes = `[${treatmentName}] ${notes}`
+        }
+      }
+
       await window.api.addAppointment({
         patient_id: selectedPatient.id,
         date: format(date, 'yyyy-MM-dd'),
         time: finalTime,
         status: 'pending',
-        notes: notes
+        notes: finalNotes
       })
       setOpen(false)
       onAppointmentSaved()
@@ -160,12 +185,9 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
           <DialogTitle className="text-xl">Nuevo Turno</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col md:flex-row h-[480px]">
-          {/* COLUMNA 1: FECHA Y HORA (COMPACTA) */}
+        <div className="flex flex-col md:flex-row h-[520px]">
           <div className="w-full md:w-[360px] bg-slate-50 border-r border-slate-100 p-6 flex flex-col gap-4">
-            {/* Contenedor Unificado */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              {/* Calendario */}
               <div className="p-3 border-b border-slate-100 flex justify-center">
                 <Calendar
                   mode="single"
@@ -184,14 +206,12 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
                 />
               </div>
 
-              {/* SECCIÓN HORA COMPACTA CON CONTROLES SÓLIDOS */}
               <div className="bg-slate-50/50 p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-slate-600 font-medium text-sm">
                   <Clock className="w-4 h-4" /> Horario:
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* INPUT HORA (Estilo Spinner) */}
                   <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-white h-9 shadow-sm">
                     <input
                       type="text"
@@ -218,7 +238,6 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
 
                   <span className="font-bold text-slate-300">:</span>
 
-                  {/* INPUT MINUTOS (Estilo Spinner) */}
                   <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-white h-9 shadow-sm">
                     <input
                       type="text"
@@ -247,7 +266,6 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
             </div>
           </div>
 
-          {/* COLUMNA 2: PACIENTE Y DETALLES */}
           <div className="flex-1 p-6 flex flex-col gap-5 overflow-y-auto bg-white">
             <div className="space-y-3">
               <Label className="text-slate-600">Buscar Paciente</Label>
@@ -310,22 +328,43 @@ export function NewAppointmentDialog({ onAppointmentSaved }: NewAppointmentDialo
                   </CardContent>
                 </Card>
               ) : (
-                !searchError && (
-                  <div className="h-24 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 text-sm bg-slate-50/30">
-                    <User className="w-8 h-8 mb-2 opacity-20" />
-                    <span>Ingrese DNI para buscar</span>
-                  </div>
-                )
+                <div className="h-24 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 text-sm bg-slate-50/30">
+                  <User className="w-8 h-8 mb-2 opacity-20" />
+                  <span>Ingrese DNI para buscar</span>
+                </div>
               )}
             </div>
 
             <div className="h-px bg-slate-100 w-full" />
 
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-slate-600">
+                <Stethoscope className="w-4 h-4" /> Tratamiento (Opcional)
+              </Label>
+              <Select value={selectedTreatmentId} onValueChange={setSelectedTreatmentId}>
+                <SelectTrigger className="bg-white border-slate-200">
+                  <SelectValue placeholder="Seleccionar tratamiento..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {treatments.map((t) => (
+                    <SelectItem key={t.id} value={t.id.toString()}>
+                      <div className="flex items-center justify-between w-full min-w-[200px]">
+                        <span className="font-medium text-slate-700">{t.name}</span>
+                        <span className="text-slate-400 font-normal ml-4">
+                          $ {t.default_price.toLocaleString()}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2 flex-1 flex flex-col">
               <Label className="text-slate-600">Notas Adicionales</Label>
               <Textarea
-                placeholder="Motivo de la consulta..."
-                className="resize-none flex-1 min-h-[100px] bg-slate-50 border-slate-200"
+                placeholder="Motivo de la consulta, detalles..."
+                className="resize-none flex-1 min-h-[80px] bg-slate-50 border-slate-200"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
